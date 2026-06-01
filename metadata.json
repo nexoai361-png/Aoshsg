@@ -1,6 +1,6 @@
 {
   "name": "Calculator",
-  "description": "An elegant, professional calculator app with advanced operations and calculation history.",
+  "description": "An elegant, professional calculator app with advanced operations, calculation history, and precise converter tools.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

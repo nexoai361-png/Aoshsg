@@ -3,6 +3,8 @@ package com.example.calculator.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.calculator.engine.CalculatorEngine
+import com.example.calculator.engine.ConverterCategory
+import com.example.calculator.engine.ConverterEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -15,8 +17,17 @@ data class HistoryItem(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+enum class AppMode {
+    CALCULATOR, CONVERTER
+}
+
 class CalculatorViewModel : ViewModel() {
 
+    // App Mode Controller
+    private val _appMode = MutableStateFlow(AppMode.CALCULATOR)
+    val appMode = _appMode.asStateFlow()
+
+    // --- Calculator State ---
     private val _expression = MutableStateFlow("")
     val expression = _expression.asStateFlow()
 
@@ -32,11 +43,85 @@ class CalculatorViewModel : ViewModel() {
     private val _isAdvancedMode = MutableStateFlow(false)
     val isAdvancedMode = _isAdvancedMode.asStateFlow()
 
+    // --- Converter State ---
+    private val _converterCategory = MutableStateFlow(ConverterCategory.LENGTH)
+    val converterCategory = _converterCategory.asStateFlow()
+
+    private val _converterInputValue = MutableStateFlow("1")
+    val converterInputValue = _converterInputValue.asStateFlow()
+
+    private val _converterFromUnit = MutableStateFlow("m")
+    val converterFromUnit = _converterFromUnit.asStateFlow()
+
+    private val _converterToUnit = MutableStateFlow("km")
+    val converterToUnit = _converterToUnit.asStateFlow()
+
+    private val _converterResult = MutableStateFlow("0.001")
+    val converterResult = _converterResult.asStateFlow()
+
+    fun setAppMode(mode: AppMode) {
+        _appMode.value = mode
+    }
+
     fun toggleAdvancedMode() {
         _isAdvancedMode.value = !_isAdvancedMode.value
     }
 
+    fun setConverterCategory(category: ConverterCategory) {
+        _converterCategory.value = category
+        _converterFromUnit.value = category.defaultFrom
+        _converterToUnit.value = category.defaultTo
+        recalculateConversion()
+    }
+
+    fun setConverterFromUnit(unit: String) {
+        _converterFromUnit.value = unit
+        recalculateConversion()
+    }
+
+    fun setConverterToUnit(unit: String) {
+        _converterToUnit.value = unit
+        recalculateConversion()
+    }
+
+    fun setConverterInputValue(value: String) {
+        _converterInputValue.value = value
+        recalculateConversion()
+    }
+
+    fun swapConverterUnits() {
+        val oldFrom = _converterFromUnit.value
+        _converterFromUnit.value = _converterToUnit.value
+        _converterToUnit.value = oldFrom
+        recalculateConversion()
+    }
+
+    private fun recalculateConversion() {
+        val inputStr = _converterInputValue.value
+        if (inputStr.isBlank() || inputStr == "-") {
+            _converterResult.value = ""
+            return
+        }
+        val parsed = inputStr.toDoubleOrNull()
+        if (parsed == null) {
+            _converterResult.value = "Error"
+            return
+        }
+        val computed = ConverterEngine.convert(
+            value = parsed,
+            from = _converterFromUnit.value,
+            to = _converterToUnit.value,
+            category = _converterCategory.value
+        )
+        _converterResult.value = ConverterEngine.formatResult(computed)
+    }
+
     fun onKeyPress(key: String) {
+        if (_appMode.value == AppMode.CONVERTER) {
+            handleConverterKeyPress(key)
+            return
+        }
+
         _isError.value = false
         when (key) {
             "C" -> {
@@ -69,9 +154,55 @@ class CalculatorViewModel : ViewModel() {
                 evaluateFinal()
             }
             else -> {
+                // Ignore keys that don't belong to basic math on screen in non-advanced mode to keep screen safe
                 _expression.value += key
                 updateLivePreview()
             }
+        }
+    }
+
+    private fun handleConverterKeyPress(key: String) {
+        val current = _converterInputValue.value
+        when (key) {
+            "C" -> {
+                _converterInputValue.value = ""
+                recalculateConversion()
+            }
+            "⌫" -> {
+                if (current.isNotEmpty()) {
+                    _converterInputValue.value = current.dropLast(1)
+                    recalculateConversion()
+                }
+            }
+            "±" -> {
+                if (current.startsWith("-")) {
+                    _converterInputValue.value = current.substring(1)
+                } else if (current.isNotEmpty() && current != "0") {
+                    _converterInputValue.value = "-$current"
+                } else {
+                    _converterInputValue.value = "-"
+                }
+                recalculateConversion()
+            }
+            "." -> {
+                if (!current.contains(".")) {
+                    _converterInputValue.value = if (current.isEmpty() || current == "-") {
+                        "${current}0."
+                    } else {
+                        "$current."
+                    }
+                    recalculateConversion()
+                }
+            }
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" -> {
+                if (current == "0") {
+                    _converterInputValue.value = key
+                } else {
+                    _converterInputValue.value = current + key
+                }
+                recalculateConversion()
+            }
+            // Ignore math operators in converter mode unless they are useful
         }
     }
 
@@ -180,3 +311,4 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 }
+

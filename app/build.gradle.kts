@@ -119,3 +119,15 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
+val copyApkToOutputs = tasks.register<Copy>("copyApkToOutputs") {
+  dependsOn("assembleDebug")
+  from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+  into(layout.projectDirectory.dir(".build-outputs"))
+}
+
+tasks.register<Copy>("copyApkOutputs") {
+  dependsOn(copyApkToOutputs)
+  from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+  into(layout.projectDirectory.dir("APK_DOWNLOAD"))
+}

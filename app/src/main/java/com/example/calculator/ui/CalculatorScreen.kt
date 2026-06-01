@@ -2,6 +2,7 @@ package com.example.calculator.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -34,6 +35,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.calculator.viewmodel.CalculatorViewModel
 import com.example.calculator.viewmodel.HistoryItem
+import com.example.calculator.viewmodel.AppMode
+import com.example.calculator.engine.ConverterCategory
+import com.example.calculator.engine.ConverterEngine
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,11 +46,19 @@ fun CalculatorScreen(
     viewModel: CalculatorViewModel,
     modifier: Modifier = Modifier
 ) {
+    val appMode by viewModel.appMode.collectAsStateWithLifecycle()
     val expression by viewModel.expression.collectAsStateWithLifecycle()
     val previewResult by viewModel.previewResult.collectAsStateWithLifecycle()
     val isError by viewModel.isError.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
     val isAdvancedMode by viewModel.isAdvancedMode.collectAsStateWithLifecycle()
+
+    // Converter States
+    val converterCategory by viewModel.converterCategory.collectAsStateWithLifecycle()
+    val converterInputValue by viewModel.converterInputValue.collectAsStateWithLifecycle()
+    val converterFromUnit by viewModel.converterFromUnit.collectAsStateWithLifecycle()
+    val converterToUnit by viewModel.converterToUnit.collectAsStateWithLifecycle()
+    val converterResult by viewModel.converterResult.collectAsStateWithLifecycle()
 
     var showHistoryPopup by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -122,22 +134,74 @@ fun CalculatorScreen(
                             onToggleHistory = { showHistoryPopup = !showHistoryPopup },
                             onShowInfo = { showInfoDialog = true },
                             isAdvanced = isAdvancedMode,
-                            isWide = true
+                            isWide = true,
+                            appMode = appMode,
+                            onModeSelected = { viewModel.setAppMode(it) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ModeSwitcher(
+                            currentMode = appMode,
+                            onModeSelected = { viewModel.setAppMode(it) }
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        DisplayArea(
-                            expression = expression,
-                            preview = previewResult,
-                            shakeOffset = shakeOffset,
-                            isError = isError,
-                            modifier = Modifier.weight(0.8f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        KeypadGrid(
-                            onKeyPress = { viewModel.onKeyPress(it) },
-                            isAdvanced = isAdvancedMode,
-                            modifier = Modifier.weight(2.2f)
-                        )
+                        
+                        if (appMode == AppMode.CALCULATOR) {
+                            DisplayArea(
+                                expression = expression,
+                                preview = previewResult,
+                                shakeOffset = shakeOffset,
+                                isError = isError,
+                                modifier = Modifier.weight(0.8f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            KeypadGrid(
+                                onKeyPress = { viewModel.onKeyPress(it) },
+                                isAdvanced = isAdvancedMode,
+                                modifier = Modifier.weight(2.2f)
+                            )
+                        } else {
+                            // Converter layout main area
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                ConverterCategoryRow(
+                                    selectedCategory = converterCategory,
+                                    onCategorySelected = { viewModel.setConverterCategory(it) }
+                                )
+                                ConverterInputCard(
+                                    label = "FROM INPUT VALUE",
+                                    value = converterInputValue,
+                                    selectedUnit = converterFromUnit,
+                                    availableUnits = converterCategory.units,
+                                    onUnitSelected = { viewModel.setConverterFromUnit(it) },
+                                    isActive = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { viewModel.swapConverterUnits() },
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF334155))
+                                ) {
+                                    Text("⇅", color = Color(0xFF818CF8), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                }
+                                ConverterInputCard(
+                                    label = "CONVERTED RESULT",
+                                    value = converterResult,
+                                    selectedUnit = converterToUnit,
+                                    availableUnits = converterCategory.units,
+                                    onUnitSelected = { viewModel.setConverterToUnit(it) },
+                                    isActive = false,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            ConverterKeypadGrid(
+                                onKeyPress = { viewModel.onKeyPress(it) },
+                                onSwap = { viewModel.swapConverterUnits() },
+                                modifier = Modifier.weight(2.2f)
+                            )
+                        }
                     }
                 }
 
@@ -150,82 +214,91 @@ fun CalculatorScreen(
                     shape = RoundedCornerShape(24.dp),
                     border = CardDefaults.outlinedCardBorder()
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Calculation History",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFF1F5F9)
-                            )
-                            if (history.isNotEmpty()) {
-                                IconButton(
-                                    onClick = { viewModel.clearHistory() },
-                                    modifier = Modifier.testTag("clear_history_wide_button")
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Clear all history",
-                                        tint = Color(0xFFEF4444)
-                                    )
-                                }
-                            }
-                        }
-                        
-                        Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0x22FFFFFF))
-
-                        if (history.isEmpty()) {
-                            EmptyHistoryState()
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(history, key = { it.id }) { item ->
-                                    HistoryRow(
-                                        item = item,
-                                        onClick = { viewModel.selectHistoryItem(item) }
-                                    )
-                                }
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0x1A6366F1)),
-                            shape = RoundedCornerShape(12.dp)
+                    if (appMode == AppMode.CALCULATOR) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = "Quick help",
-                                    tint = Color(0xFF818CF8),
-                                    modifier = Modifier.size(20.dp)
-                                )
                                 Text(
-                                    text = "Full operators (sin, cos, log, %, ^) auto-balance standard parenthesis groupings on calculation.",
-                                    fontSize = 11.sp,
-                                    lineHeight = 15.sp,
-                                    color = Color(0xFFC7D2FE)
+                                    text = "Calculation History",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFF1F5F9)
                                 )
+                                if (history.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { viewModel.clearHistory() },
+                                        modifier = Modifier.testTag("clear_history_wide_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Clear all history",
+                                            tint = Color(0xFFEF4444)
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0x22FFFFFF))
+
+                            if (history.isEmpty()) {
+                                EmptyHistoryState()
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(history, key = { it.id }) { item ->
+                                        HistoryRow(
+                                            item = item,
+                                            onClick = { viewModel.selectHistoryItem(item) }
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0x1A6366F1)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = "Quick help",
+                                        tint = Color(0xFF818CF8),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Full operators (sin, cos, log, %, ^) auto-balance standard parenthesis groupings on calculation.",
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        color = Color(0xFFC7D2FE)
+                                    )
+                                }
                             }
                         }
+                    } else {
+                        // Multi unit converter fast reference side card
+                        ConverterQuickReferencePane(
+                            valueStr = converterInputValue,
+                            fromUnit = converterFromUnit,
+                            category = converterCategory
+                        )
                     }
                 }
             }
@@ -241,22 +314,74 @@ fun CalculatorScreen(
                     onToggleHistory = { showHistoryPopup = true },
                     onShowInfo = { showInfoDialog = true },
                     isAdvanced = isAdvancedMode,
-                    isWide = false
+                    isWide = false,
+                    appMode = appMode,
+                    onModeSelected = { viewModel.setAppMode(it) }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                ModeSwitcher(
+                    currentMode = appMode,
+                    onModeSelected = { viewModel.setAppMode(it) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                DisplayArea(
-                    expression = expression,
-                    preview = previewResult,
-                    shakeOffset = shakeOffset,
-                    isError = isError,
-                    modifier = Modifier.weight(1.2f)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                KeypadGrid(
-                    onKeyPress = { viewModel.onKeyPress(it) },
-                    isAdvanced = isAdvancedMode,
-                    modifier = Modifier.weight(3f)
-                )
+                
+                if (appMode == AppMode.CALCULATOR) {
+                    DisplayArea(
+                        expression = expression,
+                        preview = previewResult,
+                        shakeOffset = shakeOffset,
+                        isError = isError,
+                        modifier = Modifier.weight(1.2f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    KeypadGrid(
+                        onKeyPress = { viewModel.onKeyPress(it) },
+                        isAdvanced = isAdvancedMode,
+                        modifier = Modifier.weight(3f)
+                    )
+                } else {
+                    // Converter Compact view
+                    Column(modifier = Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ConverterCategoryRow(
+                            selectedCategory = converterCategory,
+                            onCategorySelected = { viewModel.setConverterCategory(it) }
+                        )
+                        ConverterInputCard(
+                            label = "FROM",
+                            value = converterInputValue,
+                            selectedUnit = converterFromUnit,
+                            availableUnits = converterCategory.units,
+                            onUnitSelected = { viewModel.setConverterFromUnit(it) },
+                            isActive = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { viewModel.swapConverterUnits() },
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF334155))
+                        ) {
+                            Text("⇅", color = Color(0xFF818CF8), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                        ConverterInputCard(
+                            label = "TO",
+                            value = converterResult,
+                            selectedUnit = converterToUnit,
+                            availableUnits = converterCategory.units,
+                            onUnitSelected = { viewModel.setConverterToUnit(it) },
+                            isActive = false,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ConverterKeypadGrid(
+                        onKeyPress = { viewModel.onKeyPress(it) },
+                        onSwap = { viewModel.swapConverterUnits() },
+                        modifier = Modifier.weight(3f)
+                    )
+                }
             }
 
             // Compact History Bottom Sheet
@@ -375,7 +500,9 @@ fun CalculatorHeader(
     onToggleHistory: () -> Unit,
     onShowInfo: () -> Unit,
     isAdvanced: Boolean,
-    isWide: Boolean
+    isWide: Boolean,
+    appMode: AppMode,
+    onModeSelected: (AppMode) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -386,7 +513,7 @@ fun CalculatorHeader(
     ) {
         Column {
             Text(
-                text = "CALCULATOR",
+                text = if (appMode == AppMode.CALCULATOR) "CALCULATOR" else "CONVERTER",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
@@ -414,26 +541,28 @@ fun CalculatorHeader(
                 )
             }
 
-            // Advanced keys drawer trigger
-            TextButton(
-                onClick = onToggleAdvanced,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (isAdvanced) Color(0xFF818CF8) else Color(0xFF94A3B8)
-                ),
-                shape = CircleShape,
-                modifier = Modifier
-                    .testTag("toggle_advanced_button")
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = if (isAdvanced) "Basic" else "Scientific",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            if (appMode == AppMode.CALCULATOR) {
+                // Advanced keys drawer trigger
+                TextButton(
+                    onClick = onToggleAdvanced,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = if (isAdvanced) Color(0xFF818CF8) else Color(0xFF94A3B8)
+                    ),
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .testTag("toggle_advanced_button")
+                        .height(40.dp)
+                ) {
+                    Text(
+                        text = if (isAdvanced) "Basic" else "Scientific",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             // Compact History button
-            if (!isWide) {
+            if (!isWide && appMode == AppMode.CALCULATOR) {
                 IconButton(
                     onClick = onToggleHistory,
                     modifier = Modifier.testTag("compact_history_trigger")
@@ -891,5 +1020,367 @@ fun EmptyHistoryState() {
             color = Color(0xFF475569),
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+fun ModeSwitcher(
+    currentMode: AppMode,
+    onModeSelected: (AppMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color(0xFF1E293B)) // Slate 800
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val modes = listOf(AppMode.CALCULATOR, AppMode.CONVERTER)
+        modes.forEach { mode ->
+            val isSelected = currentMode == mode
+            val isSelectedColor = if (isSelected) Color(0xFF4F46E5) else Color.Transparent
+            val textColor = if (isSelected) Color.White else Color(0xFF94A3B8)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(isSelectedColor)
+                    .clickable { onModeSelected(mode) }
+                    .testTag("mode_switch_${mode.name.lowercase()}"),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = when (mode) {
+                        AppMode.CALCULATOR -> "Calculator"
+                        AppMode.CONVERTER -> "Converter Tools"
+                    },
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ConverterCategoryRow(
+    selectedCategory: ConverterCategory,
+    onCategorySelected: (ConverterCategory) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ConverterCategory.values().forEach { category ->
+            val isSelected = category == selectedCategory
+            val containerColor = if (isSelected) Color(0x334F46E5) else Color(0x1F1E293B)
+            val borderStroke = if (isSelected) BorderStroke(1.5.dp, Color(0xFF818CF8)) else BorderStroke(1.dp, Color(0x1AFFFFFF))
+            val textColor = if (isSelected) Color(0xFFF1F5F9) else Color(0xFF94A3B8)
+            
+            Card(
+                colors = CardDefaults.cardColors(containerColor = containerColor),
+                border = borderStroke,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .clickable { onCategorySelected(category) }
+                    .testTag("category_pill_${category.name.lowercase()}")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(text = category.icon, fontSize = 16.sp)
+                    Text(
+                        text = category.displayName,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConverterInputCard(
+    label: String,
+    value: String,
+    selectedUnit: String,
+    availableUnits: List<String>,
+    onUnitSelected: (String) -> Unit,
+    isActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (isActive) Color(0xFF0F172A) else Color(0xFF070B19)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = if (isActive) BorderStroke(1.5.dp, Color(0xFF818CF8)) else BorderStroke(1.1.dp, Color(0x2294A3B8)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1.1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                    color = Color(0xFF64748B)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0x1B818CF8))
+                            .clickable { expanded = true }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = selectedUnit,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFC7D2FE)
+                        )
+                        Text(
+                            text = "▼",
+                            fontSize = 10.sp,
+                            color = Color(0xFF818CF8)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color(0xFF1E293B))
+                    ) {
+                        availableUnits.forEach { unit ->
+                            DropdownMenuItem(
+                                text = { Text(unit, color = Color.White) },
+                                onClick = {
+                                    onUnitSelected(unit)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.weight(1.9f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = if (value.isEmpty()) "0" else value,
+                    fontSize = if (value.length > 10) (if (value.length > 15) 15.sp else 18.sp) else 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (isActive) Color(0xFFF1F5F9) else Color(0xFF34D399),
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ConverterKeypadGrid(
+    onKeyPress: (String) -> Unit,
+    onSwap: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Row 1
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            NumberKey("7", onKeyPress, Modifier.weight(1f))
+            NumberKey("8", onKeyPress, Modifier.weight(1f))
+            NumberKey("9", onKeyPress, Modifier.weight(1f))
+            ActionKey("⌫", "delete", onKeyPress, Modifier.weight(1f))
+        }
+
+        // Row 2
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            NumberKey("4", onKeyPress, Modifier.weight(1f))
+            NumberKey("5", onKeyPress, Modifier.weight(1f))
+            NumberKey("6", onKeyPress, Modifier.weight(1f))
+            ActionKey("C", "C", onKeyPress, Modifier.weight(1f))
+        }
+
+        // Row 3
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            NumberKey("1", onKeyPress, Modifier.weight(1f))
+            NumberKey("2", onKeyPress, Modifier.weight(1f))
+            NumberKey("3", onKeyPress, Modifier.weight(1f))
+            SpecialKey("±", "±", onKeyPress, Modifier.weight(1f))
+        }
+
+        // Row 4
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF0F766E) // Darker teal
+                ),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onSwap() }
+                    .testTag("key_converter_swap")
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "⇅ Swap",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+            NumberKey("0", onKeyPress, Modifier.weight(1f))
+            NumberKey(".", onKeyPress, Modifier.weight(1f))
+            
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0x0CFFFFFF)
+                ),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Box(modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+}
+
+@Composable
+fun ConverterQuickReferencePane(
+    valueStr: String,
+    fromUnit: String,
+    category: ConverterCategory,
+    modifier: Modifier = Modifier
+) {
+    val value = valueStr.toDoubleOrNull() ?: 0.0
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Full Unit Reference",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFF1F5F9)
+        )
+        Text(
+            text = "Simultaneous equivalents for current input",
+            fontSize = 11.sp,
+            color = Color(0xFF64748B)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0x1F94A3B8)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(category.units) { unit ->
+                    val isSame = unit == fromUnit
+                    val converted = if (isSame) value else ConverterEngine.convert(value, fromUnit, unit, category)
+                    val formatted = ConverterEngine.formatResult(converted)
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSame) Color(0x1F818CF8) else Color.Transparent)
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = unit,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (isSame) Color(0xFF818CF8) else Color(0xFF94A3B8)
+                        )
+                        Text(
+                            text = formatted,
+                            fontSize = 15.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSame) Color(0xFF34D399) else Color(0xFFF1F5F9),
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
