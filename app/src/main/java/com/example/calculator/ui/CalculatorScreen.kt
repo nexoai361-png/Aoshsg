@@ -169,6 +169,7 @@ fun CalculatorScreen(
                                     availableUnits = converterCategory.units,
                                     onUnitSelected = { viewModel.setConverterFromUnit(it) },
                                     isActive = true,
+                                    onValueChange = { viewModel.setConverterInputValue(it) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 IconButton(
@@ -355,6 +356,7 @@ fun CalculatorScreen(
                             availableUnits = converterCategory.units,
                             onUnitSelected = { viewModel.setConverterFromUnit(it) },
                             isActive = true,
+                            onValueChange = { viewModel.setConverterInputValue(it) },
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
@@ -1156,6 +1158,7 @@ fun ConverterInputCard(
     availableUnits: List<String>,
     onUnitSelected: (String) -> Unit,
     isActive: Boolean,
+    onValueChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -1166,12 +1169,14 @@ fun ConverterInputCard(
         ),
         shape = RoundedCornerShape(8.dp),
         border = if (isActive) BorderStroke(1.5.dp, VsCodeStatusBar) else BorderStroke(1.dp, VsCodeActiveBorder),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 105.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1186,7 +1191,7 @@ fun ConverterInputCard(
                     letterSpacing = 1.sp,
                     color = VsCodeTextSecondary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 
                 Box {
                     Row(
@@ -1194,7 +1199,7 @@ fun ConverterInputCard(
                             .clip(RoundedCornerShape(8.dp))
                             .background(VsCodeBackground)
                             .clickable { expanded = true }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -1234,16 +1239,60 @@ fun ConverterInputCard(
                 modifier = Modifier.weight(1.9f),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Text(
-                    text = if (value.isEmpty()) "0" else value,
-                    fontSize = if (value.length > 10) (if (value.length > 15) 15.sp else 18.sp) else 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = if (isActive) VsCodeTextPrimary else VsCodeTeal,
-                    textAlign = TextAlign.End,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (isActive) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = value,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() || it == '.' || it == '-' }) {
+                                onValueChange(newValue)
+                            }
+                        },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = VsCodeTextPrimary,
+                            fontSize = if (value.length > 10) (if (value.length > 15) 16.sp else 20.sp) else 26.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End
+                        ),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        singleLine = true,
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(VsCodeStatusBar),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("converter_input_text_field"),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                if (value.isEmpty()) {
+                                    Text(
+                                        text = "0",
+                                        color = VsCodeTextSecondary,
+                                        fontSize = 26.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                } else {
+                    Text(
+                        text = if (value.isEmpty()) "0" else value,
+                        fontSize = if (value.length > 10) (if (value.length > 15) 16.sp else 20.sp) else 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = FontFamily.Monospace,
+                        color = VsCodeTeal,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

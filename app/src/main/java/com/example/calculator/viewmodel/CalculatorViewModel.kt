@@ -47,7 +47,7 @@ class CalculatorViewModel : ViewModel() {
     private val _converterCategory = MutableStateFlow(ConverterCategory.LENGTH)
     val converterCategory = _converterCategory.asStateFlow()
 
-    private val _converterInputValue = MutableStateFlow("1")
+    private val _converterInputValue = MutableStateFlow("")
     val converterInputValue = _converterInputValue.asStateFlow()
 
     private val _converterFromUnit = MutableStateFlow("m")
@@ -56,7 +56,7 @@ class CalculatorViewModel : ViewModel() {
     private val _converterToUnit = MutableStateFlow("km")
     val converterToUnit = _converterToUnit.asStateFlow()
 
-    private val _converterResult = MutableStateFlow("0.001")
+    private val _converterResult = MutableStateFlow("")
     val converterResult = _converterResult.asStateFlow()
 
     fun setAppMode(mode: AppMode) {
