@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -13,8 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
+import com.example.ui.theme.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,18 +96,11 @@ fun CalculatorScreen(
     val configuration = LocalConfiguration.current
     val isWideScreen = configuration.screenWidthDp >= 600
 
-    // Premium twilight dark gradient background
+    // VS Code default dark theme solid background
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F172A), // Slate 900
-                        Color(0xFF020617)  // Slate 950
-                    )
-                )
-            )
+            .background(VsCodeBackground)
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
         if (isWideScreen) {
@@ -113,21 +108,22 @@ fun CalculatorScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(24.dp), // Increased padding for generous whitespace
+                horizontalArrangement = Arrangement.spacedBy(24.dp) // More whitespace between columns
             ) {
                 // Calculator Main Pane (Keyboard & Displays)
                 Card(
                     modifier = Modifier
                         .weight(1.2f)
                         .fillMaxHeight(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0x3D1E293B)), // Frosted slate glass
-                    shape = RoundedCornerShape(24.dp)
+                    colors = CardDefaults.cardColors(containerColor = VsCodeSidebar),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, VsCodeActiveBorder)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp)
+                            .padding(24.dp) // Increased padding for generous internal whitespace
                     ) {
                         CalculatorHeader(
                             onToggleAdvanced = { viewModel.toggleAdvancedMode() },
@@ -138,12 +134,12 @@ fun CalculatorScreen(
                             appMode = appMode,
                             onModeSelected = { viewModel.setAppMode(it) }
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                         ModeSwitcher(
                             currentMode = appMode,
                             onModeSelected = { viewModel.setAppMode(it) }
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                         
                         if (appMode == AppMode.CALCULATOR) {
                             DisplayArea(
@@ -153,7 +149,7 @@ fun CalculatorScreen(
                                 isError = isError,
                                 modifier = Modifier.weight(0.8f)
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                             KeypadGrid(
                                 onKeyPress = { viewModel.onKeyPress(it) },
                                 isAdvanced = isAdvancedMode,
@@ -161,7 +157,7 @@ fun CalculatorScreen(
                             )
                         } else {
                             // Converter layout main area
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 ConverterCategoryRow(
                                     selectedCategory = converterCategory,
                                     onCategorySelected = { viewModel.setConverterCategory(it) }
@@ -179,11 +175,16 @@ fun CalculatorScreen(
                                     onClick = { viewModel.swapConverterUnits() },
                                     modifier = Modifier
                                         .align(Alignment.CenterHorizontally)
-                                        .size(36.dp)
+                                        .size(32.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF334155))
+                                        .background(VsCodeButtonBg)
                                 ) {
-                                    Text("⇅", color = Color(0xFF818CF8), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Icon(
+                                        imageVector = Icons.Default.SwapVert,
+                                        contentDescription = "Swap Units",
+                                        tint = VsCodeBlueLight,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                                 ConverterInputCard(
                                     label = "CONVERTED RESULT",
@@ -195,7 +196,7 @@ fun CalculatorScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                             ConverterKeypadGrid(
                                 onKeyPress = { viewModel.onKeyPress(it) },
                                 onSwap = { viewModel.swapConverterUnits() },
@@ -210,15 +211,15 @@ fun CalculatorScreen(
                     modifier = Modifier
                         .weight(0.8f)
                         .fillMaxHeight(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0x241E293B)),
-                    shape = RoundedCornerShape(24.dp),
-                    border = CardDefaults.outlinedCardBorder()
+                    colors = CardDefaults.cardColors(containerColor = VsCodeSidebar),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, VsCodeActiveBorder)
                 ) {
                     if (appMode == AppMode.CALCULATOR) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(16.dp)
+                                .padding(24.dp) // More whitespace
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -229,7 +230,7 @@ fun CalculatorScreen(
                                     text = "Calculation History",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFF1F5F9)
+                                    color = VsCodeTextPrimary
                                 )
                                 if (history.isNotEmpty()) {
                                     IconButton(
@@ -239,13 +240,13 @@ fun CalculatorScreen(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Clear all history",
-                                            tint = Color(0xFFEF4444)
+                                            tint = VsCodeRed
                                         )
                                     }
                                 }
                             }
                             
-                            Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0x22FFFFFF))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = VsCodeActiveBorder)
 
                             if (history.isEmpty()) {
                                 EmptyHistoryState()
@@ -254,7 +255,7 @@ fun CalculatorScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     items(history, key = { it.id }) { item ->
                                         HistoryRow(
@@ -265,29 +266,30 @@ fun CalculatorScreen(
                                 }
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             Card(
-                                colors = CardDefaults.cardColors(containerColor = Color(0x1A6366F1)),
-                                shape = RoundedCornerShape(12.dp)
+                                colors = CardDefaults.cardColors(containerColor = VsCodeBackground),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, VsCodeActiveBorder)
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Info,
                                         contentDescription = "Quick help",
-                                        tint = Color(0xFF818CF8),
+                                        tint = VsCodeTeal,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Text(
                                         text = "Full operators (sin, cos, log, %, ^) auto-balance standard parenthesis groupings on calculation.",
-                                        fontSize = 11.sp,
-                                        lineHeight = 15.sp,
-                                        color = Color(0xFFC7D2FE)
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        color = VsCodeTextPrimary
                                     )
                                 }
                             }
@@ -307,7 +309,7 @@ fun CalculatorScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(24.dp) // More whitespace at edges
             ) {
                 CalculatorHeader(
                     onToggleAdvanced = { viewModel.toggleAdvancedMode() },
@@ -318,12 +320,12 @@ fun CalculatorScreen(
                     appMode = appMode,
                     onModeSelected = { viewModel.setAppMode(it) }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp)) // More whitespace
                 ModeSwitcher(
                     currentMode = appMode,
                     onModeSelected = { viewModel.setAppMode(it) }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                 
                 if (appMode == AppMode.CALCULATOR) {
                     DisplayArea(
@@ -333,7 +335,7 @@ fun CalculatorScreen(
                         isError = isError,
                         modifier = Modifier.weight(1.2f)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                     KeypadGrid(
                         onKeyPress = { viewModel.onKeyPress(it) },
                         isAdvanced = isAdvancedMode,
@@ -341,7 +343,7 @@ fun CalculatorScreen(
                     )
                 } else {
                     // Converter Compact view
-                    Column(modifier = Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(modifier = Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         ConverterCategoryRow(
                             selectedCategory = converterCategory,
                             onCategorySelected = { viewModel.setConverterCategory(it) }
@@ -359,11 +361,16 @@ fun CalculatorScreen(
                             onClick = { viewModel.swapConverterUnits() },
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .size(36.dp)
+                                .size(32.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF334155))
+                                .background(VsCodeButtonBg)
                         ) {
-                            Text("⇅", color = Color(0xFF818CF8), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Icon(
+                                imageVector = Icons.Default.SwapVert,
+                                contentDescription = "Swap Units",
+                                tint = VsCodeBlueLight,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                         ConverterInputCard(
                             label = "TO",
@@ -375,7 +382,7 @@ fun CalculatorScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp)) // More whitespace
                     ConverterKeypadGrid(
                         onKeyPress = { viewModel.onKeyPress(it) },
                         onSwap = { viewModel.swapConverterUnits() },
@@ -388,13 +395,13 @@ fun CalculatorScreen(
             if (showHistoryPopup) {
                 ModalBottomSheet(
                     onDismissRequest = { showHistoryPopup = false },
-                    containerColor = Color(0xFF0F172A),
-                    scrimColor = Color(0xBF020617)
+                    containerColor = VsCodeSidebar,
+                    scrimColor = Color(0x99000000)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxHeight(0.6f)
-                            .padding(16.dp)
+                            .padding(20.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -405,12 +412,12 @@ fun CalculatorScreen(
                                 text = "History",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFF1F5F9)
+                                color = VsCodeTextPrimary
                             )
                             if (history.isNotEmpty()) {
                                 TextButton(
                                     onClick = { viewModel.clearHistory() },
-                                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = VsCodeRed),
                                     modifier = Modifier.testTag("clear_history_compact_button")
                                 ) {
                                     Icon(
@@ -471,15 +478,15 @@ fun CalculatorScreen(
                 confirmButton = {
                     Button(
                         onClick = { showInfoDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF818CF8)),
+                        colors = ButtonDefaults.buttonColors(containerColor = VsCodeStatusBar),
                         modifier = Modifier.testTag("info_dialog_ok")
                     ) {
                         Text("Close")
                     }
                 },
-                containerColor = Color(0xFF1E293B),
-                titleContentColor = Color(0xFFF1F5F9),
-                textContentColor = Color(0xFF94A3B8)
+                containerColor = VsCodeSidebar,
+                titleContentColor = VsCodeTextPrimary,
+                textContentColor = VsCodeTextSecondary
             )
         }
     }
@@ -488,8 +495,8 @@ fun CalculatorScreen(
 @Composable
 fun InfoLabel(title: String, desc: String) {
     Column {
-        Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFFF1F5F9))
-        Text(desc, fontSize = 12.sp, color = Color(0xFF94A3B8))
+        Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = VsCodeTeal)
+        Text(desc, fontSize = 12.sp, color = VsCodeTextPrimary)
         Spacer(modifier = Modifier.height(4.dp))
     }
 }
@@ -517,14 +524,14 @@ fun CalculatorHeader(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
-                color = Color(0xFF818CF8) // Warm Soft Indigo
+                color = VsCodeStatusBar
             )
             Text(
-                text = "Aero Pro Precision",
+                text = "VS Code Precision Widget",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp,
-                color = Color(0xFF64748B)
+                color = VsCodeTextSecondary
             )
         }
 
@@ -537,7 +544,7 @@ fun CalculatorHeader(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Formula syntax help",
-                    tint = Color(0xFF94A3B8)
+                    tint = VsCodeTextSecondary
                 )
             }
 
@@ -546,7 +553,7 @@ fun CalculatorHeader(
                 TextButton(
                     onClick = onToggleAdvanced,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = if (isAdvanced) Color(0xFF818CF8) else Color(0xFF94A3B8)
+                        contentColor = if (isAdvanced) VsCodeStatusBar else VsCodeTextSecondary
                     ),
                     shape = CircleShape,
                     modifier = Modifier
@@ -571,7 +578,7 @@ fun CalculatorHeader(
                         text = "History",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF94A3B8)
+                        color = VsCodeTextSecondary
                     )
                 }
             }
@@ -597,9 +604,10 @@ fun DisplayArea(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF0B1224)) // Deep space obsidian background
-            .padding(18.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(VsCodeKeypadBg) // VS Code integrated container background
+            .border(BorderStroke(1.dp, VsCodeActiveBorder), RoundedCornerShape(16.dp))
+            .padding(24.dp) // More whitespace internally
             .offset(x = shakeOffset.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
@@ -614,7 +622,7 @@ fun DisplayArea(
                 fontSize = if (expression.length > 14) 28.sp else 38.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Monospace,
-                color = if (isError) Color(0xFFEF4444) else Color(0xFFF1F5F9),
+                color = if (isError) VsCodeRed else VsCodeTextPrimary,
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 modifier = Modifier
@@ -623,7 +631,7 @@ fun DisplayArea(
                     .testTag("expression_display")
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp)) // More whitespace
 
             // Sub Live Formula Outcome preview
             AnimatedVisibility(
@@ -636,7 +644,7 @@ fun DisplayArea(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
-                    color = Color(0xFF34D399), // Emerald Neon
+                    color = VsCodeTeal, // VS Code Teal outcome highlights
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -776,9 +784,10 @@ fun NumberKey(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E293B) // Dark grey Slate 800
+            containerColor = VsCodeButtonBg
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier
             .fillMaxHeight()
             .clickable { onKeyPress(value) }
@@ -790,9 +799,9 @@ fun NumberKey(
         ) {
             Text(
                 text = value,
-                fontSize = 22.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = VsCodeBlueLight
             )
         }
     }
@@ -807,9 +816,10 @@ fun OperatorKey(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF4F46E5) // Indigo Primary Accents
+            containerColor = VsCodeSidebar
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier
             .fillMaxHeight()
             .clickable { onKeyPress(symbol) }
@@ -821,9 +831,9 @@ fun OperatorKey(
         ) {
             Text(
                 text = symbol,
-                fontSize = 24.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = VsCodePurple
             )
         }
     }
@@ -838,9 +848,10 @@ fun SpecialKey(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF334155) // Slate 700 Keys
+            containerColor = VsCodeButtonBg
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier
             .fillMaxHeight()
             .clickable { onKeyPress(symbol) }
@@ -852,9 +863,9 @@ fun SpecialKey(
         ) {
             Text(
                 text = symbol,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFE2E8F0)
+                color = VsCodeYellow
             )
         }
     }
@@ -869,11 +880,12 @@ fun ScientificKey(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF151D2F) // Embedded deeper Slate
+            containerColor = VsCodeKeypadBg
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier
-            .height(44.dp)
+            .height(36.dp)
             .clickable { onKeyPress(symbol) }
             .testTag("key_scientific_$label")
     ) {
@@ -883,9 +895,9 @@ fun ScientificKey(
         ) {
             Text(
                 text = label,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF818CF8) // Highlight in Indigo Blue
+                color = VsCodePurple
             )
         }
     }
@@ -898,11 +910,13 @@ fun ActionKey(
     onKeyPress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val containerColor = if (label == "delete" || symbol == "C") VsCodeRed else VsCodeOrange
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFEA580C) // Amber / Light Dark Red accent
+            containerColor = containerColor
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier
             .fillMaxHeight()
             .clickable { onKeyPress(symbol) }
@@ -912,12 +926,21 @@ fun ActionKey(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = symbol,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                color = Color.White
-            )
+            if (symbol == "⌫") {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Default.Backspace,
+                    contentDescription = "delete",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            } else {
+                Text(
+                    text = symbol,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -930,9 +953,9 @@ fun EqualKey(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF0D9488) // Vibrant Emerald/Teal
+            containerColor = VsCodeStatusBar
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = modifier
             .fillMaxHeight()
             .clickable { onKeyPress(symbol) }
@@ -944,7 +967,7 @@ fun EqualKey(
         ) {
             Text(
                 text = symbol,
-                fontSize = 28.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White
             )
@@ -958,8 +981,9 @@ fun HistoryRow(
     onClick: () -> Unit
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0x1F94A3B8)),
+        colors = CardDefaults.cardColors(containerColor = VsCodeKeypadBg),
         shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
@@ -968,23 +992,23 @@ fun HistoryRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(14.dp) // Added more whitespace
         ) {
             Text(
                 text = item.expression,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.Monospace,
-                color = Color(0xFF94A3B8),
+                color = VsCodeTextSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp)) // Added more whitespace
             Text(
                 text = "= ${item.result}",
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF34D399), // Emerald Highlight
+                color = VsCodeTeal,
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -997,27 +1021,27 @@ fun EmptyHistoryState() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 32.dp),
+            .padding(vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = Icons.Default.Info,
             contentDescription = null,
-            tint = Color(0x3BFFFFFF),
+            tint = VsCodeActiveBorder,
             modifier = Modifier.size(40.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "No calculations yet",
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF64748B)
+            color = VsCodeTextSecondary
         )
         Text(
             text = "Your computation history displays here.",
             fontSize = 11.sp,
-            color = Color(0xFF475569),
+            color = VsCodeTextSecondary,
             textAlign = TextAlign.Center
         )
     }
@@ -1032,22 +1056,23 @@ fun ModeSwitcher(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color(0xFF1E293B)) // Slate 800
-            .padding(4.dp),
+            .height(36.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(VsCodeKeypadBg) // VS Code Keypad Background
+            .border(BorderStroke(1.dp, VsCodeActiveBorder), RoundedCornerShape(8.dp))
+            .padding(2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val modes = listOf(AppMode.CALCULATOR, AppMode.CONVERTER)
         modes.forEach { mode ->
             val isSelected = currentMode == mode
-            val isSelectedColor = if (isSelected) Color(0xFF4F46E5) else Color.Transparent
-            val textColor = if (isSelected) Color.White else Color(0xFF94A3B8)
+            val isSelectedColor = if (isSelected) VsCodeStatusBar else Color.Transparent
+            val textColor = if (isSelected) Color.White else VsCodeTextSecondary
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(6.dp))
                     .background(isSelectedColor)
                     .clickable { onModeSelected(mode) }
                     .testTag("mode_switch_${mode.name.lowercase()}"),
@@ -1058,7 +1083,7 @@ fun ModeSwitcher(
                         AppMode.CALCULATOR -> "Calculator"
                         AppMode.CONVERTER -> "Converter Tools"
                     },
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = textColor
                 )
@@ -1077,32 +1102,43 @@ fun ConverterCategoryRow(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp), // More spacing
         verticalAlignment = Alignment.CenterVertically
     ) {
         ConverterCategory.values().forEach { category ->
             val isSelected = category == selectedCategory
-            val containerColor = if (isSelected) Color(0x334F46E5) else Color(0x1F1E293B)
-            val borderStroke = if (isSelected) BorderStroke(1.5.dp, Color(0xFF818CF8)) else BorderStroke(1.dp, Color(0x1AFFFFFF))
-            val textColor = if (isSelected) Color(0xFFF1F5F9) else Color(0xFF94A3B8)
+            val containerColor = if (isSelected) VsCodeSidebar else VsCodeBackground
+            val borderStroke = if (isSelected) BorderStroke(1.5.dp, VsCodeStatusBar) else BorderStroke(1.dp, VsCodeActiveBorder)
+            val textColor = if (isSelected) Color.White else VsCodeTextSecondary
             
             Card(
                 colors = CardDefaults.cardColors(containerColor = containerColor),
                 border = borderStroke,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .clickable { onCategorySelected(category) }
                     .testTag("category_pill_${category.name.lowercase()}")
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), // Spaced out / padding whitespace
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(text = category.icon, fontSize = 16.sp)
+                    val categoryIcon = when (category) {
+                        ConverterCategory.LENGTH -> Icons.Default.Straighten
+                        ConverterCategory.WEIGHT -> Icons.Default.Balance
+                        ConverterCategory.TEMPERATURE -> Icons.Default.Thermostat
+                        ConverterCategory.VOLUME -> Icons.Default.Science
+                    }
+                    Icon(
+                        imageVector = categoryIcon,
+                        contentDescription = category.displayName,
+                        tint = if (isSelected) VsCodeTeal else VsCodeTextSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Text(
                         text = category.displayName,
-                        fontSize = 13.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = textColor
                     )
@@ -1126,16 +1162,16 @@ fun ConverterInputCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive) Color(0xFF0F172A) else Color(0xFF070B19)
+            containerColor = if (isActive) VsCodeSidebar else VsCodeKeypadBg
         ),
-        shape = RoundedCornerShape(16.dp),
-        border = if (isActive) BorderStroke(1.5.dp, Color(0xFF818CF8)) else BorderStroke(1.1.dp, Color(0x2294A3B8)),
+        shape = RoundedCornerShape(8.dp),
+        border = if (isActive) BorderStroke(1.5.dp, VsCodeStatusBar) else BorderStroke(1.dp, VsCodeActiveBorder),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1148,7 +1184,7 @@ fun ConverterInputCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp,
-                    color = Color(0xFF64748B)
+                    color = VsCodeTextSecondary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 
@@ -1156,33 +1192,34 @@ fun ConverterInputCard(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x1B818CF8))
+                            .background(VsCodeBackground)
                             .clickable { expanded = true }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = selectedUnit,
-                            fontSize = 15.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFC7D2FE)
+                            color = VsCodeTeal
                         )
-                        Text(
-                            text = "▼",
-                            fontSize = 10.sp,
-                            color = Color(0xFF818CF8)
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Dropdown icon",
+                            tint = VsCodeBlueLight,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
-
+ 
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        modifier = Modifier.background(Color(0xFF1E293B))
+                        modifier = Modifier.background(VsCodeSidebar)
                     ) {
                         availableUnits.forEach { unit ->
                             DropdownMenuItem(
-                                text = { Text(unit, color = Color.White) },
+                                text = { Text(unit, color = VsCodeTextPrimary) },
                                 onClick = {
                                     onUnitSelected(unit)
                                     expanded = false
@@ -1192,7 +1229,7 @@ fun ConverterInputCard(
                     }
                 }
             }
-
+ 
             Box(
                 modifier = Modifier.weight(1.9f),
                 contentAlignment = Alignment.CenterEnd
@@ -1202,7 +1239,7 @@ fun ConverterInputCard(
                     fontSize = if (value.length > 10) (if (value.length > 15) 15.sp else 18.sp) else 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFamily = FontFamily.Monospace,
-                    color = if (isActive) Color(0xFFF1F5F9) else Color(0xFF34D399),
+                    color = if (isActive) VsCodeTextPrimary else VsCodeTeal,
                     textAlign = TextAlign.End,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -1270,9 +1307,10 @@ fun ConverterKeypadGrid(
         ) {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF0F766E) // Darker teal
+                    containerColor = VsCodeTeal
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, VsCodeActiveBorder),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -1283,12 +1321,23 @@ fun ConverterKeypadGrid(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "⇅ Swap",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwapVert,
+                            contentDescription = "Swap icon",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Swap",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
             NumberKey("0", onKeyPress, Modifier.weight(1f))
@@ -1296,9 +1345,9 @@ fun ConverterKeypadGrid(
             
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0x0CFFFFFF)
+                    containerColor = Color.Transparent
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -1321,30 +1370,31 @@ fun ConverterQuickReferencePane(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(18.dp)
     ) {
         Text(
             text = "Full Unit Reference",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFF1F5F9)
+            color = VsCodeTextPrimary
         )
         Text(
             text = "Simultaneous equivalents for current input",
             fontSize = 11.sp,
-            color = Color(0xFF64748B)
+            color = VsCodeTextSecondary
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0x1F94A3B8)),
-            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = VsCodeKeypadBg),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, VsCodeActiveBorder),
             modifier = Modifier.weight(1f)
         ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
+                    .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(category.units) { unit ->
@@ -1356,8 +1406,13 @@ fun ConverterQuickReferencePane(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSame) Color(0x1F818CF8) else Color.Transparent)
-                            .padding(10.dp),
+                            .background(if (isSame) VsCodeBackground else Color.Transparent)
+                            .border(
+                                width = if (isSame) 1.dp else 0.dp,
+                                color = if (isSame) VsCodeStatusBar else Color.Transparent,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -1365,14 +1420,14 @@ fun ConverterQuickReferencePane(
                             text = unit,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (isSame) Color(0xFF818CF8) else Color(0xFF94A3B8)
+                            color = if (isSame) VsCodeStatusBar else VsCodeTextSecondary
                         )
                         Text(
                             text = formatted,
                             fontSize = 15.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSame) Color(0xFF34D399) else Color(0xFFF1F5F9),
+                            color = if (isSame) VsCodeTeal else VsCodeTextPrimary,
                             textAlign = TextAlign.End,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
