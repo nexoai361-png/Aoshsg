@@ -59,6 +59,28 @@ class CalculatorViewModel : ViewModel() {
     private val _converterResult = MutableStateFlow("")
     val converterResult = _converterResult.asStateFlow()
 
+    // --- GST State ---
+    private val _gstAmountInput = MutableStateFlow("")
+    val gstAmountInput = _gstAmountInput.asStateFlow()
+
+    private val _gstRateInput = MutableStateFlow("18")
+    val gstRateInput = _gstRateInput.asStateFlow()
+
+    private val _gstIsAddMode = MutableStateFlow(true)
+    val gstIsAddMode = _gstIsAddMode.asStateFlow()
+
+    fun setGstAmountInput(value: String) {
+        _gstAmountInput.value = value
+    }
+
+    fun setGstRateInput(value: String) {
+        _gstRateInput.value = value
+    }
+
+    fun setGstAddMode(isAdd: Boolean) {
+        _gstIsAddMode.value = isAdd
+    }
+
     fun setAppMode(mode: AppMode) {
         _appMode.value = mode
     }
